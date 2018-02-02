@@ -24,17 +24,9 @@ The FRAP analysis is implemented in the `frapr` package which is sourced
 using `devtools`. Backend functions are abstracted by the
 `fittingTasks.R` file.
 
-    suppressPackageStartupMessages(source("fittingTasks.R"))
+    suppressWarnings(suppressPackageStartupMessages(source("fittingTasks.R")))
 
     ## Loading frapr
-
-    ## Warning: package 'RcppArmadillo' was built under R version 3.4.3
-
-    ## Warning: package 'spatstat' was built under R version 3.4.3
-
-    ## Warning: package 'spatstat.data' was built under R version 3.4.3
-
-    ## Warning in strptime(x, "%Y-%m-%d-%H-%M-%OS", tz = tz): unknown timezone 'zone/tz/2017c.1.0/zoneinfo/Europe/London'
 
 We will select the Su(H) wildtype dataset, replicate 5. The individual
 frames for this replicate are provided in the `images/` directory.
@@ -55,7 +47,7 @@ frames for this replicate are provided in the `images/` directory.
     ## Performing the Free rate correction
     ## Performing bleach depth correction
     ## Starting simulation
-    ## Simulation finished in  2.051 0.294 2.346 0 0
+    ## Simulation finished in  1.815 0.317 2.133 0 0
 
 The fitting function takes a range of values to simulated, creating an
 grid array of all combinations. In the example above we used a single
