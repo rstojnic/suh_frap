@@ -1,0 +1,114 @@
+---
+title: "Su(H) FRAP analysis"
+output: md_document
+---
+
+# Su(H) FRAP analysis
+
+This repository contains the code for the FRAP analysis in Gomez-Lamarca et al (2018) paper. 
+
+## The FRAP analysis pipeline
+
+Re-running the analysis for all datasets takes a couple of weeks of CPU time, so we will here illustrate the approach on a single Su(H) replicate. You should be able to run this on your machine in a couple of minutes.
+
+### Dependencies
+
+Dependencies can be found in the [R/frapr-pkg.R](R/frapr-pkg.R) file. An additional unpublished package ```must``` is required and can be found in [dependencies/must-1.0.tar.gz](dependencies/must-1.0.tar.gz).
+
+### Pipeline
+
+The FRAP analysis is implemented in the ```frapr``` package which is sourced using ```devtools```. Backend functions are abstracted by the ```fittingTasks.R``` file. 
+
+```{r setup, include=FALSE}
+require("knitr")
+knitr::opts_knit$set(root.dir = "R/")
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r init}
+suppressPackageStartupMessages(source("fittingTasks.R"))
+```
+
+```{r,include=FALSE,echo=FALSE}
+# load this now to supress noisy output later... 
+library(EBImage)
+```
+
+We will select the Su(H) wildtype dataset, replicate 5. The individual frames for this replicate are provided in the ```images/``` directory. 
+
+```{r fitting}
+fun = fittingBase$SuH_sf8_a9_20170810
+
+out = fun$fit(5, list(Free.range=0.70, D.range=2.2e-12, 
+                      res.time.range=0.25,
+                      roi.file="rois.zip", roi.fg=c("B", "UB"), 
+                      first.ROI.only=FALSE,
+                      save.base=NA, algorithm="full"))
+```
+
+The fitting function takes a range of values to simulated, creating an grid array of all combinations. In the example above we used a single value for the proportion of free molecules (```Free.range```), diffussion (```D.range```) and residence time (```res.time.range```). We track recovery in two regions of interest (ROIs): ```B``` and ```UB```. The ```B``` region is where the bleaching took place, and ```UB``` is a distant region within the nucleus that is not directly bleached. These ROIs were drawn using ImageJ and stored in ```rois.zip```. Finally, we will use the "full" algorithm that does the full dynamical model with binding and diffusion, using the approach by [Beaudouin et al 2006](https://www.ncbi.nlm.nih.gov/pubmed/16387760). 
+
+The output object ```out``` contains the error rate, as well the full simulation trace along the grid of values. As we used only a single combination of parameters, we can extract and plot the resulting object as follows:
+
+```{r plotting}
+sim = out$e$sim[[1]][[1]][[1]]
+p = sim$params
+plotParamCurves(out$img, p, out$e$res.time, out$e$Free, out$e$D, "SuH_sf8_a9", 5, mfrow=c(1,3),
+                sim.mean=sim)
+```
+
+The first panel shows the recovery in the bleached region, the second in the unbleached (distant) region, and the final panel shows the parameters used in the simulation. We see a good correspondance between the curves that are observed (in gray) and the predicted recovery (in black and blue). 
+
+The final heatmaps shown in the paper have been obtained by averaging the error matrices ```out$e$err``` for all the replicates. 
+
+```{r}
+out$e$err
+```
+
+## Total errors for different replicates
+
+We saved the output of running the above algorithm on all datasets into a ```.RData``` file provided in this repository:
+
+```{r full-data}
+load("../data/fittingData.RData")
+```
+
+First we'll verify that the error rate calculate in the previous section (variable ```out```) for replicate 5 with 0.25s residence time, 70% free, 2.2e-12 um2/s diffusion matches that in the raw data file (variable ```sets.all.err```). Note that because all the datasets for this experiment with different are collected into a single array the data for this replicate can be found at the index of 15. 
+
+```{r assert}
+assert_that(are_equal(out$e$err[1,1,1], sets.all.err$SuH_sf8_a9[[15]]["0.25", "0.7", "2.2e-12"]))
+```
+
+Next we'll print the raw data as shown on the heatmap on Figure 1 (which is an average over ```sets.all.err$SuH_sf8_a9``` for all replicates). Here the rows are different residence times (in seconds), and columns are percentage of free molecules. The error is the mean square error of the difference between the predicted and observed recovery. 
+
+```{r heatmap}
+round(log10(sets$SuH_sf8_a9),2)
+```
+
+We can also plot the average recovery (gray circles) versus the prediction from the best combination of parameters (black and blue lines):
+
+```{r plot-recovery}
+t = sets.t$SuH_sf8_a9
+curve = sets.curve$SuH_sf8_a9
+predicted = best.predicted$SuH_sf8_a9
+
+par(mfrow=c(1,2))
+plot(t, curve[,1], main="Su(H) average (bleached)", col="darkgray", xlab="Time (s)", ylab="Recovery (bleached ROI)")
+abline(h=1, lty=2, col="darkgray")
+lines(t[-c(1:10, length(t))], predicted[,1], lwd=3, col="black")
+
+plot(t, curve[,2], main="Su(H) average (unbleached)", col="darkgray", xlab="Time (s)", ylab="Recovery (unbleached ROI)")
+abline(h=1, lty=2, col="darkgray")
+lines(t[-c(1:10, length(t))], predicted[,2], lwd=3, col="blue")
+```
+
+The data for the remaining datasets are also available in the [data/FRAP_fitting_data.RData](data/FRAP_fitting_data.RData) file. 
+
+```{r}
+names(sets)
+```
+
+## Session information
+```{r}
+sessionInfo()
+```

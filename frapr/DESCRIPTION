@@ -1,0 +1,13 @@
+Package: frapr
+Type: Package
+Title: FRAP analysis and modelling
+Version: 0.99
+Date: 2014-07-28
+Author: Robert Stojnic
+Maintainer: Robert Stojnic <robert.stojnic@gmail.com>
+Description: Analyse and model FRAP (Fluorescence recovery after photobleaching) and
+             FRET (Forster resonance energy transfer) datasets.                
+License: LGPL (>= 2)
+LinkingTo: Rcpp, RcppArmadillo
+Depends: Rcpp, RcppArmadillo
+Imports: animation

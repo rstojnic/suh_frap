@@ -1,0 +1,4 @@
+useDynLib(frapr)
+useDynLib(gillespieSim)
+importFrom("animation", saveGIF, ani.options)
+exportPattern("^[[:alpha:]]+")
